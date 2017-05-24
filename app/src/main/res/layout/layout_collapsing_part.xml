@@ -3,10 +3,16 @@
              android:layout_width="match_parent"
              android:layout_height="match_parent">
 
-
-    <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_view"
-        android:background="#a1a1a1"
+    <ImageView
+        android:src="@mipmap/nini1"
+        android:scaleType="centerCrop"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:background="#f00"
+        android:text="abc"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
 </FrameLayout>

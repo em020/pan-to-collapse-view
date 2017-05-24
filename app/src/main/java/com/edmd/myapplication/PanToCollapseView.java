@@ -29,8 +29,8 @@ public class PanToCollapseView extends ViewGroup {
 
     private boolean laidOut;
 
-    private View collapsingPart;
-    private View panningPart;
+//    private View collapsingPart;
+//    private View panningPart;
 
     public PanToCollapseView(Context context) {
         super(context);
@@ -41,16 +41,16 @@ public class PanToCollapseView extends ViewGroup {
         initialize(attrs);
     }
 
-    public PanToCollapseView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-        initialize(attrs);
-    }
+//    public PanToCollapseView(Context context, AttributeSet attrs, int defStyleAttr) {
+//        super(context, attrs, defStyleAttr);
+//        initialize(attrs);
+//    }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public PanToCollapseView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        initialize(attrs);
-    }
+//    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+//    public PanToCollapseView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+//        super(context, attrs, defStyleAttr, defStyleRes);
+//        initialize(attrs);
+//    }
 
     private void initialize(AttributeSet attrs) {
 
@@ -61,7 +61,7 @@ public class PanToCollapseView extends ViewGroup {
         if (collapsingPartLayoutId == -1) {
             throw new RuntimeException("必须提供collapsing_part_layout");
         } else {
-            collapsingPart = inflate(getContext(), collapsingPartLayoutId, this);
+            inflate(getContext(), collapsingPartLayoutId, this);
         }
 
         int panningPartLayoutId = array.getResourceId(R.styleable.PanToCollapseView_panning_part_layout, -1);
@@ -69,7 +69,7 @@ public class PanToCollapseView extends ViewGroup {
         if (panningPartLayoutId == -1) {
             throw new RuntimeException("必须提供panning_part_layout");
         } else {
-            panningPart = inflate(getContext(), panningPartLayoutId, this);
+            inflate(getContext(), panningPartLayoutId, this);
         }
 
 
@@ -93,8 +93,10 @@ public class PanToCollapseView extends ViewGroup {
         final int heightSpecCollapsing = MeasureSpec.makeMeasureSpec((int) (pHeight * (1-GOLDEN)), MeasureSpec.EXACTLY);
 
 
-        /*View child = getChildAt(0);*/
+        View collapsingPart = getChildAt(0);
         measureChild(collapsingPart, widthSpecFull, heightSpecCollapsing);
+
+        View panningPart = getChildAt(1);
         measureChild(panningPart, widthSpecFull, heightSpecFull);
 
     }
@@ -110,14 +112,21 @@ public class PanToCollapseView extends ViewGroup {
             offset = maxOffset;
         }
 
+
+        View collapsingPart = getChildAt(0);
+        int fooTop = (int) (t - maxOffset/2f + offset/2f);
+        collapsingPart.layout(l, fooTop, r, fooTop + (int)maxOffset);
+
         int top;
         int bottom;
+
+        View panningPart = getChildAt(1);
 
         top = (int) (t + offset);
         bottom = (int) (b + offset);
         panningPart.layout(l, top, r, bottom);
 
-        collapsingPart.layout(l, t, r, (int) (t + (b - t) * (1 - GOLDEN)));
+
     }
 
 
@@ -153,7 +162,7 @@ public class PanToCollapseView extends ViewGroup {
                     } else if (ev.getY() > yOnDown) {
 
                         // check scroll to determine
-                        boolean canScrollUpwards = innerCanChildScrollVertically(getChildAt(0), -1);
+                        boolean canScrollUpwards = innerCanChildScrollVertically(getChildAt(1), -1);
                         shouldIntercept = !canScrollUpwards;
                         Log.d("edmund", "if-2, shouldIntercept = " + shouldIntercept);
                     }
