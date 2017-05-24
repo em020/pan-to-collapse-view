@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="PanToCollapseView" >
+        <attr name="foo" format="reference" />
+        <attr name="bar" format="reference" />
+        <attr name="baz" format="reference" />
+        <attr name="collapsing_part_layout" format="reference" />
+        <attr name="panning_part_layout" format="reference" />
+        <attr name="action_bar_part_layout" format="reference" />
+    </declare-styleable>
+</resources>

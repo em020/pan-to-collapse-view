@@ -1,7 +1,7 @@
 package com.edmd.myapplication;
 
-import android.annotation.TargetApi;
 import android.content.Context;
+import android.content.res.TypedArray;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.support.v4.view.MotionEventCompat;
@@ -13,79 +13,111 @@ import android.view.View;
 import android.view.ViewGroup;
 
 /**
+ * 上滑收缩顶部View
  * Created by yiminsun on 16/05/2017.
  */
 
-public class FreakView extends ViewGroup {
+public class PanToCollapseView extends ViewGroup {
 
-//    private int baseYOffset;
-//    private int newYOffset;
+    private final static float GOLDEN = 0.618f;
+
+    private float maxOffset = 300;
 
     private float offset = 300;
     private float offsetOnDown;
     private float yOnDown;
 
-    public FreakView(Context context) {
+    private boolean laidOut;
+
+    private View collapsingPart;
+    private View panningPart;
+
+    public PanToCollapseView(Context context) {
         super(context);
     }
 
-    public FreakView(Context context, AttributeSet attrs) {
+    public PanToCollapseView(Context context, AttributeSet attrs) {
         super(context, attrs);
+        initialize(attrs);
     }
 
-    public FreakView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public PanToCollapseView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
+        initialize(attrs);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public FreakView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
+    public PanToCollapseView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
         super(context, attrs, defStyleAttr, defStyleRes);
+        initialize(attrs);
+    }
+
+    private void initialize(AttributeSet attrs) {
+
+        TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.PanToCollapseView);
+
+        int collapsingPartLayoutId = array.getResourceId(R.styleable.PanToCollapseView_collapsing_part_layout, -1);
+
+        if (collapsingPartLayoutId == -1) {
+            throw new RuntimeException("必须提供collapsing_part_layout");
+        } else {
+            collapsingPart = inflate(getContext(), collapsingPartLayoutId, this);
+        }
+
+        int panningPartLayoutId = array.getResourceId(R.styleable.PanToCollapseView_panning_part_layout, -1);
+
+        if (panningPartLayoutId == -1) {
+            throw new RuntimeException("必须提供panning_part_layout");
+        } else {
+            panningPart = inflate(getContext(), panningPartLayoutId, this);
+        }
+
+
+        array.recycle();
     }
 
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-//        int wLimit= MeasureSpec.getSize(widthMeasureSpec);
-//        int hLimit = MeasureSpec.getSize(heightMeasureSpec);
-//
-//        setMeasuredDimension(wLimit, hLimit);
-//
-//
-//        for (int i = 0; i < getChildCount(); i++) {
-//            View child = getChildAt(i);
-//            child.measure();
-//        }
 
 
         final int pWidth = MeasureSpec.getSize(widthMeasureSpec);
         final int pHeight = MeasureSpec.getSize(heightMeasureSpec);
 
+
         setMeasuredDimension(pWidth, pHeight);
 
 
+        final int widthSpecFull = MeasureSpec.makeMeasureSpec(pWidth, MeasureSpec.EXACTLY);
+        final int heightSpecFull = MeasureSpec.makeMeasureSpec(pHeight, MeasureSpec.EXACTLY);
+        final int heightSpecCollapsing = MeasureSpec.makeMeasureSpec((int) (pHeight * (1-GOLDEN)), MeasureSpec.EXACTLY);
 
 
-        final int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(pWidth, MeasureSpec.EXACTLY);
-        final int childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(pHeight, MeasureSpec.EXACTLY);
-
-
-        View child = getChildAt(0);
-        measureChild(child, childWidthMeasureSpec, childHeightMeasureSpec);
+        /*View child = getChildAt(0);*/
+        measureChild(collapsingPart, widthSpecFull, heightSpecCollapsing);
+        measureChild(panningPart, widthSpecFull, heightSpecFull);
 
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
+
+        if (!laidOut) {
+            //首次layout时，按比例定初始offset
+            laidOut = true;
+
+            maxOffset = (b - t) * (1- GOLDEN);
+            offset = maxOffset;
+        }
+
         int top;
         int bottom;
 
-        /*final int offset = newYOffset;*/
-
-        View child = getChildAt(0);
-
         top = (int) (t + offset);
         bottom = (int) (b + offset);
-        child.layout(l, top, r, bottom);
+        panningPart.layout(l, top, r, bottom);
+
+        collapsingPart.layout(l, t, r, (int) (t + (b - t) * (1 - GOLDEN)));
     }
 
 
@@ -150,8 +182,8 @@ public class FreakView extends ViewGroup {
                 offset = ev.getY() - yOnDown + offsetOnDown;
                 if (offset < 0) {
                     offset = 0;
-                } else if (offset > 300) {
-                    offset = 300;
+                } else if (offset > maxOffset) {
+                    offset = maxOffset;
                 }
                 requestLayout();
                 ret = true;
