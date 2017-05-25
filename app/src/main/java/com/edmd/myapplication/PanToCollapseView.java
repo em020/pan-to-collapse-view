@@ -1,13 +1,10 @@
 package com.edmd.myapplication;
 
-import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.graphics.RectF;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.support.v4.view.MotionEventCompat;
 import android.support.v4.view.ViewCompat;
 import android.util.AttributeSet;
@@ -26,24 +23,18 @@ public class PanToCollapseView extends ViewGroup {
 
     private static final String TAG = PanToCollapseView.class.getSimpleName();
 
-    private final static float GOLDEN = 0.618f;
+    private float MAX_OVER_DRAG_PX;//从maxoffset处，手指再下滑多少，collapsing part就到了最大offset了
+    private float MAX_EXCEEDING_OFFSET_PX; // 最大offset超过maxoffset的超出值
 
-    private float maxOverDragPx;//从maxoffset处，手指再下滑多少，collapsing part就到了最大offset了
-    private float maxExceedingOffsetPx; // 最大offset超过maxoffset的超出值
+    private float MIN_OFFSET = -1;
+    private float MAX_OFFSET = 300; // overwritten in constructor
 
-    private float maxOffset = 300;
-    private float offset = 300;
-
+    private float offset = MAX_OFFSET;
     private float offsetOnDown;
     private float yOnDown;
 
-    private boolean laidOut;
-
     private int touchTarget; // 0 - collapsing, 1 - panning
-
     private View collapsingPartTouchedChild;
-
-
 
 
 
@@ -52,29 +43,43 @@ public class PanToCollapseView extends ViewGroup {
         initialize(attrs);
     }
 
+    public void setMaxOffset(float maxOffset) {
+        this.MAX_OFFSET = maxOffset;
+        offset = MAX_OFFSET;
+    }
+
     private void initialize(AttributeSet attrs) {
 
-        maxOverDragPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 350f, getContext().getResources().getDisplayMetrics());
-        maxExceedingOffsetPx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 135f, getContext().getResources().getDisplayMetrics());
+        MAX_OFFSET = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 200f, getContext().getResources().getDisplayMetrics());
+        offset = MAX_OFFSET;
+
+        MAX_OVER_DRAG_PX = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 350f, getContext().getResources().getDisplayMetrics());
+        MAX_EXCEEDING_OFFSET_PX = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 135f, getContext().getResources().getDisplayMetrics());
 
         TypedArray array = getContext().obtainStyledAttributes(attrs, R.styleable.PanToCollapseView);
 
         int collapsingPartLayoutId = array.getResourceId(R.styleable.PanToCollapseView_collapsing_part_layout, -1);
-
         if (collapsingPartLayoutId == -1) {
             throw new RuntimeException("必须提供collapsing_part_layout");
         } else {
             inflate(getContext(), collapsingPartLayoutId, this);
         }
 
-        int panningPartLayoutId = array.getResourceId(R.styleable.PanToCollapseView_panning_part_layout, -1);
 
+        int panningPartLayoutId = array.getResourceId(R.styleable.PanToCollapseView_panning_part_layout, -1);
         if (panningPartLayoutId == -1) {
             throw new RuntimeException("必须提供panning_part_layout");
         } else {
             inflate(getContext(), panningPartLayoutId, this);
         }
 
+
+        int actionBarPartLayout = array.getResourceId(R.styleable.PanToCollapseView_action_bar_part_layout, -1);
+        if (actionBarPartLayout == -1) {
+            throw new RuntimeException("必须提供action_bar_part_layout");
+        } else {
+            inflate(getContext(), actionBarPartLayout, this);
+        }
 
         array.recycle();
     }
@@ -83,49 +88,47 @@ public class PanToCollapseView extends ViewGroup {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        //Log.d(TAG, "HADV, onMeasure");//HADV - how android draw views
+        Log.d(TAG, "HADV, onMeasure");//HADV - how android draw views
 
         int pWidth = MeasureSpec.getSize(widthMeasureSpec);
         int pHeight = MeasureSpec.getSize(heightMeasureSpec);
         setMeasuredDimension(pWidth, pHeight);
 
 
-        int collapsingPartWidthSpec = MeasureSpec.makeMeasureSpec(pWidth, MeasureSpec.EXACTLY);
+        int matchParentWidthSpec = MeasureSpec.makeMeasureSpec(pWidth, MeasureSpec.EXACTLY);
+
         int collapsingPartHeightSpec;
-        if (offset <= maxOffset) {
-            collapsingPartHeightSpec = MeasureSpec.makeMeasureSpec((int) maxOffset, MeasureSpec.EXACTLY);
+        if (offset <= MAX_OFFSET) {
+            collapsingPartHeightSpec = MeasureSpec.makeMeasureSpec((int) MAX_OFFSET, MeasureSpec.EXACTLY);
         } else {
             collapsingPartHeightSpec = MeasureSpec.makeMeasureSpec((int) offset, MeasureSpec.EXACTLY);
         }
         View collapsingPart = getChildAt(0);
-        measureChild(collapsingPart, collapsingPartWidthSpec, collapsingPartHeightSpec);
+        measureChild(collapsingPart, matchParentWidthSpec, collapsingPartHeightSpec);
 
 
-        int panningPartWidthSpec = MeasureSpec.makeMeasureSpec(pWidth, MeasureSpec.EXACTLY);
         int panningPartHeightSpec = MeasureSpec.makeMeasureSpec(pHeight, MeasureSpec.EXACTLY);
         View panningPart = getChildAt(1);
-        measureChild(panningPart, panningPartWidthSpec, panningPartHeightSpec);
+        measureChild(panningPart, matchParentWidthSpec, panningPartHeightSpec);
 
+
+        int actionBarPartHeightSpec = MeasureSpec.makeMeasureSpec((int) MAX_OFFSET, MeasureSpec.AT_MOST);
+        View actionBarPart = getChildAt(2);
+        measureChild(actionBarPart, matchParentWidthSpec, actionBarPartHeightSpec);
+
+        if (MIN_OFFSET < 0) {
+            MIN_OFFSET = actionBarPart.getMeasuredHeight();
+        }
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        //Log.d(TAG, "HADV, onLayout");
-
-        if (!laidOut) {
-            //首次layout时，按比例定初始offset
-            laidOut = true;
-
-            maxOffset = (b - t) * (1- GOLDEN);
-            offset = maxOffset;
-        }
-
+        Log.d(TAG, "HADV, onLayout");
 
         View collapsingPart = getChildAt(0);
-
-        if (offset <= maxOffset) {
-            int fooTop = (int) (t - maxOffset/2f + offset/2f);
-            collapsingPart.layout(l, fooTop, r, fooTop + (int)maxOffset);
+        if (offset <= MAX_OFFSET) {
+            int fooTop = (int) (t - MAX_OFFSET /2f + offset/2f);
+            collapsingPart.layout(l, fooTop, r, fooTop + (int) MAX_OFFSET);
         } else {
             collapsingPart.layout(l, t, r, t + (int)offset);
         }
@@ -133,15 +136,22 @@ public class PanToCollapseView extends ViewGroup {
         int top;
         int bottom;
 
-        View panningPart = getChildAt(1);
 
+        View panningPart = getChildAt(1);
         top = (int) (t + offset);
         bottom = (int) (b + offset);
         panningPart.layout(l, top, r, bottom);
 
 
-    }
+        View actionBarPart = getChildAt(2);
+        actionBarPart.layout(l, t, r, t + actionBarPart.getMeasuredHeight());
 
+//        if (offset > MIN_OFFSET) {
+//            getChildAt(2).setVisibility(INVISIBLE);
+//        } else {
+//            getChildAt(2).setVisibility(VISIBLE);
+//        }
+    }
 
 
     @Override
@@ -207,7 +217,7 @@ public class PanToCollapseView extends ViewGroup {
                 if (touchTarget == 1) {
                     // click falls in panning part
 
-                    if (offset > 0) {
+                    if (offset > MIN_OFFSET) {
 
                         shouldIntercept = true;
                         Log.d(TAG, "onInterceptTouchEvent, if-0, shouldIntercept = " + shouldIntercept);
@@ -285,19 +295,19 @@ public class PanToCollapseView extends ViewGroup {
 
             case MotionEvent.ACTION_MOVE:
                 offset = ev.getY() - yOnDown + offsetOnDown;
-                if (offset < 0) {
-                    offset = 0;
-                } else if (offset > maxOffset) {
+                if (offset < MIN_OFFSET) {
+                    offset = MIN_OFFSET;
+                } else if (offset > MAX_OFFSET) {
 
                     float fingerDis = ev.getY() - yOnDown;//其中有一部分是offset < maxOffset的，刨除该部分
 
-                    float baz = maxOffset - offsetOnDown;
+                    float baz = MAX_OFFSET - offsetOnDown;
 
                     float x = fingerDis - baz;
 
-                    double y = maxExceedingOffsetPx / 1.57 * Math.atan(x * 4f / maxOverDragPx);
+                    double y = MAX_EXCEEDING_OFFSET_PX / 1.57 * Math.atan(x * 4f / MAX_OVER_DRAG_PX);
 
-                    offset = maxOffset + (float) y;
+                    offset = MAX_OFFSET + (float) y;
                 }
 
                 requestLayout();
@@ -307,10 +317,10 @@ public class PanToCollapseView extends ViewGroup {
 
 
             case MotionEvent.ACTION_UP:
-                if (offset > maxOffset) {
+                if (offset > MAX_OFFSET) {
                     // bounce back
                     ValueAnimator animator = new ValueAnimator();
-                    animator.setFloatValues(offset, maxOffset);
+                    animator.setFloatValues(offset, MAX_OFFSET);
                     animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                         @Override
                         public void onAnimationUpdate(ValueAnimator animation) {

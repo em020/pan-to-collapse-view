@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+             android:id="@+id/what_bar_root"
+             android:background="#aae27100"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/what_bar_height">
+
+        <!--中间区域，标题等-->
+        <FrameLayout
+            android:id="@+id/frame_m"
+            android:layout_marginLeft="@dimen/what_bar_height"
+            android:layout_marginRight="@dimen/what_bar_height"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+
+        <!--左-->
+        <FrameLayout
+            android:id="@+id/frame_l"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:minWidth="@dimen/what_bar_height"/>
+
+
+        <!--右2-->
+        <FrameLayout
+            android:id="@+id/frame_r2"
+            android:visibility="visible"
+            android:layout_toLeftOf="@+id/frame_r1"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:minWidth="@dimen/what_bar_height"/>
+
+
+        <!--最右-->
+        <FrameLayout
+            android:id="@+id/frame_r1"
+            android:layout_alignParentRight="true"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:minWidth="@dimen/what_bar_height"/>
+
+    </RelativeLayout>
+
+</FrameLayout>

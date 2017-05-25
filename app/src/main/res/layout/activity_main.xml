@@ -3,8 +3,10 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    tools:context="com.edmd.myapplication.MainActivity"
+    android:id="@+id/pan_to_collapse_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     app:collapsing_part_layout="@layout/layout_collapsing_part"
     app:panning_part_layout="@layout/layout_panning_part"
-    tools:context="com.edmd.myapplication.MainActivity"/>
+    app:action_bar_part_layout="@layout/what_bar_layout"/>
