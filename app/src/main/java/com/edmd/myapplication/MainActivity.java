@@ -2,6 +2,7 @@ package com.edmd.myapplication;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -18,52 +19,23 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        StatusBarFucker fucker = new StatusBarFucker();
+        fucker.setWindowExtend(1);
+        fucker.setStatusBarColor(Color.TRANSPARENT);
+        fucker.fuck(getWindow());
+
 
         RecyclerView recyclerView= (RecyclerView) findViewById(R.id.recycler_view);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(new FooAdapter());
+        recyclerView.setAdapter(new FooAdapter(100, null));
+
+
+        RecyclerView collapsingPartRecyclerView = (RecyclerView) findViewById(R.id.collapsing_part_recycler_view);
+        collapsingPartRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        collapsingPartRecyclerView.setAdapter(new FooAdapter(8, null));
     }
 
 
 
-    private class FooAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
-        @Override
-        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            Context context = parent.getContext();
-            View view = LayoutInflater.from(context).inflate(android.R.layout.simple_list_item_1, parent, false);
-            return new FooVH(view);
-        }
-
-        @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            ((FooVH)holder).textView.setText("hello, " + position);
-        }
-
-        @Override
-        public int getItemCount() {
-            return 110;
-        }
-
-
-        class FooVH extends RecyclerView.ViewHolder {
-
-            TextView textView;
-
-            FooVH(View itemView) {
-                super(itemView);
-                textView = (TextView) itemView.findViewById(android.R.id.text1);
-
-                itemView.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        int pos = getLayoutPosition();
-                        if (pos == 0) {
-                            startActivity(new Intent(v.getContext(), RecyclerViewWithinScrollViewActivity.class));
-                        }
-                    }
-                });
-            }
-        }
-    }
 }
