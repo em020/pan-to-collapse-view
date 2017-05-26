@@ -294,9 +294,13 @@ public class PanToCollapseView extends ViewGroup {
         switch (action) {
 
             case MotionEvent.ACTION_MOVE:
+
                 offset = ev.getY() - yOnDown + offsetOnDown;
+
                 if (offset < MIN_OFFSET) {
+
                     offset = MIN_OFFSET;
+
                 } else if (offset > MAX_OFFSET) {
 
                     float fingerDis = ev.getY() - yOnDown;//其中有一部分是offset < maxOffset的，刨除该部分
@@ -309,6 +313,18 @@ public class PanToCollapseView extends ViewGroup {
 
                     offset = MAX_OFFSET + (float) y;
                 }
+
+                int hisSize = ev.getHistorySize();
+                StringBuilder sb = new StringBuilder("ev_y: ");
+
+                for (int i = 0; i < hisSize; i++) {
+                    float y = ev.getHistoricalY(i);
+                    sb.append(String.format("(%d, %f); ", i, y));
+                }
+
+                Log.d(TAG, sb.toString());
+
+
 
                 requestLayout();
                 ret = true;
@@ -363,6 +379,13 @@ public class PanToCollapseView extends ViewGroup {
         }
 
         return ViewCompat.canScrollVertically(view, direction);
+    }
+
+
+    OnPanListener onPanListener;
+
+    public interface OnPanListener {
+        void onPan(float currentOffset, float minOffset, float maxOffset, float maxMaxOffset);
     }
 
 }
