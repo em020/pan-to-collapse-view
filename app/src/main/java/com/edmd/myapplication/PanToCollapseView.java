@@ -21,6 +21,10 @@ import android.view.ViewGroup;
 
 public class PanToCollapseView extends ViewGroup {
 
+    public interface OnPanListener {
+        void onPan(float currentOffset, float lastOffset, float minOffset, float maxOffset, float maxMaxOffset);
+    }
+
     private static final String TAG = PanToCollapseView.class.getSimpleName();
 
     private float MAX_OVER_DRAG_PX;//从maxoffset处，手指再下滑多少，collapsing part就到了最大offset了
@@ -32,9 +36,12 @@ public class PanToCollapseView extends ViewGroup {
     private float offset = MAX_OFFSET;
     private float offsetOnDown;
     private float yOnDown;
+    private float previousOffset;
 
     private int touchTarget; // 0 - collapsing, 1 - panning
     private View collapsingPartTouchedChild;
+
+    private OnPanListener onPanListener;
 
 
 
@@ -46,6 +53,10 @@ public class PanToCollapseView extends ViewGroup {
     public void setMaxOffset(float maxOffset) {
         this.MAX_OFFSET = maxOffset;
         offset = MAX_OFFSET;
+    }
+
+    public void setOnPanListener(OnPanListener onPanListener) {
+        this.onPanListener = onPanListener;
     }
 
     private void initialize(AttributeSet attrs) {
@@ -133,10 +144,9 @@ public class PanToCollapseView extends ViewGroup {
             collapsingPart.layout(l, t, r, t + (int)offset);
         }
 
+
         int top;
         int bottom;
-
-
         View panningPart = getChildAt(1);
         top = (int) (t + offset);
         bottom = (int) (b + offset);
@@ -146,17 +156,11 @@ public class PanToCollapseView extends ViewGroup {
         View actionBarPart = getChildAt(2);
         actionBarPart.layout(l, t, r, t + actionBarPart.getMeasuredHeight());
 
-//        if (offset > MIN_OFFSET) {
-//            getChildAt(2).setVisibility(INVISIBLE);
-//        } else {
-//            getChildAt(2).setVisibility(VISIBLE);
-//        }
     }
 
 
     @Override
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-
 
         boolean shouldIntercept = false;
 
@@ -167,6 +171,7 @@ public class PanToCollapseView extends ViewGroup {
             case MotionEvent.ACTION_DOWN:
                 yOnDown = ev.getY();
                 offsetOnDown = offset;
+                previousOffset = offset;
 
                 View panning = getChildAt(1);
                 Rect temp = new Rect();
@@ -284,8 +289,7 @@ public class PanToCollapseView extends ViewGroup {
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
 
-
-        boolean ret = false;
+        /*boolean ret = false;*/
 
         int action  = MotionEventCompat.getActionMasked(ev);
 
@@ -314,7 +318,7 @@ public class PanToCollapseView extends ViewGroup {
                     offset = MAX_OFFSET + (float) y;
                 }
 
-                int hisSize = ev.getHistorySize();
+                /*int hisSize = ev.getHistorySize();
                 StringBuilder sb = new StringBuilder("ev_y: ");
 
                 for (int i = 0; i < hisSize; i++) {
@@ -322,12 +326,16 @@ public class PanToCollapseView extends ViewGroup {
                     sb.append(String.format("(%d, %f); ", i, y));
                 }
 
-                Log.d(TAG, sb.toString());
-
-
+                Log.d(TAG, sb.toString());*/
 
                 requestLayout();
-                ret = true;
+
+
+                if (onPanListener != null) {
+                    onPanListener.onPan(offset, previousOffset, MIN_OFFSET, MAX_OFFSET, MAX_OFFSET + MAX_EXCEEDING_OFFSET_PX);
+                }
+
+                previousOffset = offset;
 
                 break;
 
@@ -357,8 +365,6 @@ public class PanToCollapseView extends ViewGroup {
 
 
 
-
-
     private boolean innerCanChildScrollVertically(View view, int direction) {
         if (view instanceof ViewGroup) {
             final ViewGroup vGroup = (ViewGroup) view;
@@ -379,13 +385,6 @@ public class PanToCollapseView extends ViewGroup {
         }
 
         return ViewCompat.canScrollVertically(view, direction);
-    }
-
-
-    OnPanListener onPanListener;
-
-    public interface OnPanListener {
-        void onPan(float currentOffset, float minOffset, float maxOffset, float maxMaxOffset);
     }
 
 }
