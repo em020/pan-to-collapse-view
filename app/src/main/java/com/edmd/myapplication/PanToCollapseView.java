@@ -99,7 +99,8 @@ public class PanToCollapseView extends ViewGroup {
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 
-        Log.d(TAG, "HADV, onMeasure");//HADV - how android draw views
+        //HADV - how android draw views
+        /*Log.d(TAG, "HADV, onMeasure");*/
 
         int pWidth = MeasureSpec.getSize(widthMeasureSpec);
         int pHeight = MeasureSpec.getSize(heightMeasureSpec);
@@ -134,7 +135,8 @@ public class PanToCollapseView extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        Log.d(TAG, "HADV, onLayout");
+
+        /*Log.d(TAG, "HADV, onLayout");*/
 
         View collapsingPart = getChildAt(0);
         if (offset <= MAX_OFFSET) {
