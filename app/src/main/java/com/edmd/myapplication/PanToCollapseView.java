@@ -364,9 +364,6 @@ public class PanToCollapseView extends ViewGroup {
 
     }
 
-
-
-
     private boolean innerCanChildScrollVertically(View view, int direction) {
 //        if (view instanceof ViewGroup) {
 //            final ViewGroup vGroup = (ViewGroup) view;
@@ -390,7 +387,10 @@ public class PanToCollapseView extends ViewGroup {
         return canScrollVertiV2(view, direction);
     }
 
-
+    /**
+     * 注意，这是一个粗暴的 过度的判断逻辑，即如果是一个view group 则只要其中有任何一个子view能够滚动就认为view group能够滚动，
+     * 这只能覆盖一些使用场景（可能大部分），当遇到不能满足的情况时，应该使用给view group指明滚动主体的方式进行判断
+     */
     private static boolean canScrollVertiV2(View view, int direction) {
 
         if (ViewCompat.canScrollVertically(view, direction)) {
