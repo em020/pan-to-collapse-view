@@ -368,25 +368,57 @@ public class PanToCollapseView extends ViewGroup {
 
 
     private boolean innerCanChildScrollVertically(View view, int direction) {
-        if (view instanceof ViewGroup) {
+//        if (view instanceof ViewGroup) {
+//            final ViewGroup vGroup = (ViewGroup) view;
+//            View child;
+//            boolean result;
+//            for (int i = 0; i < vGroup.getChildCount(); i++) {
+//                child = vGroup.getChildAt(i);
+//                if (child instanceof View) {
+//                    result = ViewCompat.canScrollVertically(child, direction);
+//                } else {
+//                    result = innerCanChildScrollVertically(child, direction);
+//                }
+//
+//                if (result) {
+//                    return true;
+//                }
+//            }
+//        }
+//
+//        return ViewCompat.canScrollVertically(view, direction);
+        return canScrollVertiV2(view, direction);
+    }
+
+
+    private static boolean canScrollVertiV2(View view, int direction) {
+
+        if (ViewCompat.canScrollVertically(view, direction)) {
+
+            return true;
+
+        } else if (view instanceof ViewGroup) {
+
             final ViewGroup vGroup = (ViewGroup) view;
-            View child;
-            boolean result;
+
             for (int i = 0; i < vGroup.getChildCount(); i++) {
-                child = vGroup.getChildAt(i);
-                if (child instanceof View) {
-                    result = ViewCompat.canScrollVertically(child, direction);
-                } else {
-                    result = innerCanChildScrollVertically(child, direction);
-                }
+
+                View child = vGroup.getChildAt(i);
+
+                boolean result = canScrollVertiV2(child, direction);
 
                 if (result) {
                     return true;
                 }
+
             }
+
+            return false;
+
+
+        } else {
+            return false;
         }
 
-        return ViewCompat.canScrollVertically(view, direction);
     }
-
 }
