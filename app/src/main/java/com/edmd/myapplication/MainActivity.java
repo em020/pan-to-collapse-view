@@ -25,6 +25,8 @@ import android.widget.ViewAnimator;
 
 import java.lang.reflect.InvocationTargetException;
 
+import yimin.sun.statusbarfucker.StatusBarFucker;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
